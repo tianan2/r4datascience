@@ -63,3 +63,13 @@ flights %>%
        y = "Average delay") 
 ```
 
+```{r}
+flights %>% 
+  left_join(weather, by = "time_hour") %>% 
+  group_by(time_hour) %>% 
+  summarize()
+
+  
+
+```
+
