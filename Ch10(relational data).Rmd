@@ -1,0 +1,65 @@
+---
+title: "Untitled"
+author: "Jaehwan Lim"
+date: "January 26, 2019"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(nycflights13)
+
+theme_set(theme_light())
+
+```
+
+```{r}
+flights_avg_delay <- flights %>% 
+  group_by(dest) %>% 
+  summarize(avg_delay = mean(dep_delay + arr_delay , na.rm = T)) 
+
+ 
+  inner_join(airports, c("dest" = "faa")) %>% 
+  ggplot(aes(lon, lat, color = avg_delay)) +
+  borders("state") + 
+  geom_point() + 
+  coord_quickmap()
+
+airports_locations <- airports %>% 
+  select(faa, lat, lon)
+  
+flights %>% 
+  left_join(airports_locations, c("origin" = "faa", "dest" = "faa")) %>% 
+  View()
+
+planes_cohorts <- planes %>% 
+  select(tailnum, plane_year = year) 
+
+flights %>% 
+  left_join(planes_cohorts, by = "tailnum") %>%
+  mutate(age = year - plane_year) %>% 
+  filter(!is.na(age)) %>% 
+  group_by(age) %>% 
+  summarize(avg_depdelay = mean(dep_delay, na.rm = TRUE), 
+            avg_arrdelay = mean(arr_delay, na.rm = TRUE),
+            dep_sd = sd(dep_delay, na.rm = TRUE), 
+            arr_sd = sd(arr_delay, na.rm = TRUE), 
+            Number = n()) %>% 
+  gather(plane_delay, time, avg_depdelay, avg_arrdelay) %>%
+  mutate(plane_delay = fct_relevel(plane_delay, "avg_depdelay", "avg_arrdelay")) %>%
+  mutate(plane_delay = recode(plane_delay, "avg_depdelay" = "Departure", "avg_arrdelay" = "Arrival")) %>% 
+  ggplot(aes(age, time)) + 
+  geom_point(aes(size = Number)) +
+  facet_wrap(~ plane_delay) + 
+  labs(title = "Plane Age and Flight Delay", 
+       subtitle = "Average delay increases until about 10 years and declines and flattens out", 
+       x = "Plane age", 
+       y = "Average delay") 
+```
+
